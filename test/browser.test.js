@@ -84,15 +84,8 @@ describe('browser', function() {
         ]
       }, schema);
 
-      let threw = false;
-      try {
-        yield test.validate();
-      } catch (error) {
-        threw = true;
-        assert.ok(error.errors['vertices.0.longitude']);
-      }
-
-      assert.ok(threw);
+      const error = yield test.validate().then(() => null, err => err);
+      assert.ok(error.errors['vertices.0.longitude']);
     });
   });
 });

@@ -2062,17 +2062,9 @@ describe('document', function() {
 
         person.name = 'Different Name';
 
-        let threw = false;
-        try {
-          yield person.save();
-        }
-        catch (err) {
-          assert.equal(err instanceof DocumentNotFoundError, true);
-          assert.equal(err.message, `No document found for query "{ _id: ${person._id} }" on model "Person"`);
-          threw = true;
-        }
-
-        assert.equal(threw, true);
+        const err = yield person.save().then(() => null, err => err);
+        assert.equal(err instanceof DocumentNotFoundError, true);
+        assert.equal(err.message, `No document found for query "{ _id: ${person._id} }" on model "Person"`);
       });
     });
 
