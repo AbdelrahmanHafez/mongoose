@@ -9346,4 +9346,31 @@ describe('document', function() {
 
     assert.equal(p.nested.test, 'new');
   });
+
+  it('fetches nested subdocuments with defaults (gh-9408)', function() {
+    return co(function*() {
+      const librarySchema = new Schema({
+        shelves: [{
+          name: String,
+          lowercaseName: { type: String,
+            default() {
+              return this.name.toLowerCase();
+            }
+          }
+        }]
+      });
+
+      const Job = db.model('Job', librarySchema);
+
+      const createdLibrary = yield Job.create({
+        shelves: [{ name: 'Engineering' }]
+      });
+
+      assert.strictEqual(createdLibrary.shelves[0].lowercaseName, 'engineering');
+
+
+      const foundJob = yield Job.findOne();
+      assert.strictEqual(foundJob.shelves[0].lowercaseName, 'engineering');
+    });
+  });
 });
