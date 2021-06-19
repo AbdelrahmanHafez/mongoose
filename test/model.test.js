@@ -7551,6 +7551,55 @@ describe('Model', function() {
       assert.ok(!test.name);
     });
   });
+  describe('named parameters support (gh-10367)', () => {
+    it('works with Model.aggregate');
+    it('works with Model.find', () => {
+      return co(function* () {
+        const { User, Post } = getModels();
+
+        const post = new Post({ content: 'Hello world!' });
+
+        const usersToCreate = [
+          new User({ name: 'Nichole', age: 26, postId: post._id }),
+          new User({ name: 'Samuel', age: 26, postId: post._id })
+        ]
+        ;
+        yield User.insertMany(usersToCreate);
+
+        const usersFromFind = yield User.find({
+          filter: { name: { $in: ['Nichole', 'Samuel'] } },
+          select: 'name postId',
+          populate: { path: 'postId' },
+          lean: true
+        });
+        assert.deepEqual(usersFromFind.map(user => user.name), ['Nichole', 'Samuel']);
+        assert.deepEqual(usersFromFind.map(user => user.age), [undefined, undefined]);
+        assert.deepEqual(usersFromFind.map(user => user.postId.content), ['Hello world!', 'Hello world!']);
+      });
+    });
+    it('works with Model.findOne');
+    it('works with Model.updateOne');
+    it('works with Model.updateMany');
+    it('works with Model.countDocuments');
+    it('works with Model.validate');
+    it('works with Model.aggregate');
+    it('works with Model.exists');
+    it('works with document.validate');
+    it('works with document.validateSync');
+    function getModels() {
+      const userSchema = new Schema({
+        name: String,
+        age: Number,
+        postId: { type: Schema.ObjectId, ref: 'Post' }
+      });
+
+      const User = db.model('User', userSchema);
+      const Post = db.model('Post', { content: String });
+
+      return { User, Post };
+    }
+  });
+
 });
 
 
