@@ -7646,6 +7646,24 @@ describe('Model', function() {
 
     assert.ok(book.author instanceof mongoose.Types.ObjectId);
   });
+
+  it('Document#save works with validateBeforeSave: false (gh-11163)', async() => {
+    const addressSchema = new Schema({ zipCode: { type: Number } });
+    const userSchema = new Schema({
+      addresses: { type: [addressSchema], default: [] }
+    });
+
+    const User = db.model('user', userSchema);
+
+    const createdUser = await User.create({});
+
+    const user = await User.findById(createdUser._id, { addresses: 1 });
+
+    user.addresses[user.addresses.length] = { zipCode: 3 };
+    user.markModified('addresses.' + (user.addresses.length - 1));
+
+    await user.save({ validateBeforeSave: false });
+  });
 });
 
 
