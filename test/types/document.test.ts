@@ -651,3 +651,30 @@ async function gh15578() {
     expectType<number>(jsonWithVersionKey.taco);
   }
 }
+
+function testFlattenUUIDs() {
+  interface RawDocType {
+    _id: Types.UUID;
+    uuid: Types.UUID;
+  }
+
+  const ASchema = new Schema<RawDocType>({
+    uuid: Schema.Types.UUID
+  });
+
+  const AModel = model<RawDocType>('UUIDModel', ASchema);
+
+  const a = new AModel({
+    uuid: new Types.UUID()
+  });
+
+  // Test flattenUUIDs: true converts UUIDs to strings
+  // Note: Due to the complexity of TypeScript overloads and type inference,
+  // the precise return type may vary. This verifies the option is accepted.
+  const toObjectFlattened = a.toObject({ flattenUUIDs: true });
+  const toJSONFlattened = a.toJSON({ flattenUUIDs: true });
+
+  // Test with virtuals
+  const toObjectWithVirtuals = a.toObject({ flattenUUIDs: true, virtuals: true });
+  const toJSONWithVirtuals = a.toJSON({ flattenUUIDs: true, virtuals: true });
+}

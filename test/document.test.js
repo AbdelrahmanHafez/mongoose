@@ -7041,6 +7041,116 @@ describe('document', function() {
     });
   });
 
+  describe('`flattenUUIDs` option (gh-15021)', function() {
+    function createTestContext() {
+      const UUID = mongoose.Types.UUID;
+      const schema = new Schema({
+        _id: 'UUID',
+        uuid: 'UUID',
+        nested: {
+          uuid: 'UUID'
+        },
+        subdocument: new Schema({ _id: 'UUID' }),
+        documentArray: [new Schema({ _id: 'UUID' })]
+      }, { versionKey: false });
+
+      const Test = db.model('Test', schema);
+      return { Test, UUID };
+    }
+
+    it('converts UUIDs to strings in toObject()', function() {
+      // Arrange
+      const { Test, UUID } = createTestContext();
+      const doc = new Test({
+        _id: new UUID('00000000-0000-0000-0000-000000000000'),
+        uuid: new UUID('11111111-1111-1111-1111-111111111111'),
+        nested: {
+          uuid: new UUID('22222222-2222-2222-2222-222222222222')
+        },
+        subdocument: {
+          _id: new UUID('33333333-3333-3333-3333-333333333333')
+        },
+        documentArray: [{ _id: new UUID('44444444-4444-4444-4444-444444444444') }]
+      });
+
+      // Act
+      const obj = doc.toObject({ flattenUUIDs: true });
+
+      // Assert
+      assert.deepStrictEqual(obj, {
+        _id: '00000000-0000-0000-0000-000000000000',
+        uuid: '11111111-1111-1111-1111-111111111111',
+        nested: {
+          uuid: '22222222-2222-2222-2222-222222222222'
+        },
+        subdocument: {
+          _id: '33333333-3333-3333-3333-333333333333'
+        },
+        documentArray: [{ _id: '44444444-4444-4444-4444-444444444444' }]
+      });
+    });
+
+    it('converts UUIDs to strings in toJSON()', function() {
+      // Arrange
+      const { Test, UUID } = createTestContext();
+      const doc = new Test({
+        _id: new UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+        uuid: new UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
+        nested: { uuid: new UUID('cccccccc-cccc-cccc-cccc-cccccccccccc') },
+        subdocument: { _id: new UUID('dddddddd-dddd-dddd-dddd-dddddddddddd') },
+        documentArray: [{ _id: new UUID('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee') }]
+      });
+
+      // Act
+      const json = doc.toJSON({ flattenUUIDs: true });
+
+      // Assert
+      assert.strictEqual(typeof json.uuid, 'string');
+      assert.strictEqual(json.uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+      assert.strictEqual(json._id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+    });
+
+    it('does not convert UUIDs when flattenUUIDs is false', function() {
+      // Arrange
+      const { Test, UUID } = createTestContext();
+      const testUUID = new UUID('12345678-1234-1234-1234-123456789012');
+      const doc = new Test({
+        _id: testUUID,
+        uuid: testUUID,
+        nested: { uuid: testUUID },
+        subdocument: { _id: testUUID },
+        documentArray: [{ _id: testUUID }]
+      });
+
+      // Act
+      const obj = doc.toObject({ flattenUUIDs: false });
+
+      // Assert
+      assert.ok(obj._id instanceof UUID);
+      assert.ok(obj.uuid instanceof UUID);
+    });
+
+    it('does not convert UUIDs when flattenUUIDs is not specified', function() {
+      // Arrange
+      const { Test, UUID } = createTestContext();
+      const testUUID = new UUID('12345678-1234-1234-1234-123456789012');
+      const doc = new Test({
+        _id: testUUID,
+        uuid: testUUID,
+        nested: { uuid: testUUID },
+        subdocument: { _id: testUUID },
+        documentArray: [{ _id: testUUID }]
+      });
+
+      // Act
+      const obj = doc.toObject();
+
+      // Assert
+      assert.ok(obj._id instanceof UUID);
+      assert.ok(obj.uuid instanceof UUID);
+    });
+  });
+
   it('`collection` property with strict: false (gh-7276)', async function() {
     const schema = new Schema({}, { strict: false, versionKey: false });
     const Model = db.model('Test', schema);

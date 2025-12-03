@@ -242,6 +242,8 @@ declare module 'mongoose' {
     flattenMaps?: boolean;
     /** if true, convert any ObjectIds in the result to 24 character hex strings. */
     flattenObjectIds?: boolean;
+    /** if true, convert any UUIDs in the result to 36 character hex strings. */
+    flattenUUIDs?: boolean;
     /** apply all getters (path and virtual getters) */
     getters?: boolean;
     /** remove empty objects (defaults to true) */
@@ -927,23 +929,27 @@ declare module 'mongoose' {
           } : T;
 
     /**
-    * Converts any Buffer properties into "{ type: 'buffer', data: [1, 2, 3] }" format for JSON serialization
+    * Converts any UUID properties into strings for JSON serialization
     */
-    export type UUIDToJSON<T> = T extends mongodb.UUID
+    export type UUIDToString<T> = T extends Types.UUID
       ? string
-      : T extends Document
-        ? T
-        : T extends TreatAsPrimitives
+      : T extends mongodb.UUID
+        ? string
+        : T extends Document
           ? T
-          : T extends Record<string, any> ? {
-            [K in keyof T]: T[K] extends mongodb.UUID
-              ? string
-              : T[K] extends Types.DocumentArray<infer ItemType>
-                  ? Types.DocumentArray<UUIDToJSON<ItemType>>
-                  : T[K] extends Types.Subdocument<unknown, unknown, infer SubdocType>
-                    ? HydratedSingleSubdocument<SubdocType>
-                    : UUIDToJSON<T[K]>;
-          } : T;
+          : T extends TreatAsPrimitives
+            ? T
+            : T extends Record<string, any> ? {
+              [K in keyof T]: T[K] extends Types.UUID
+                ? string
+                : T[K] extends mongodb.UUID
+                  ? string
+                  : T[K] extends Types.DocumentArray<infer ItemType>
+                      ? Types.DocumentArray<UUIDToString<ItemType>>
+                      : T[K] extends Types.Subdocument<unknown, unknown, infer SubdocType>
+                        ? HydratedSingleSubdocument<UUIDToString<SubdocType>>
+                        : UUIDToString<T[K]>;
+            } : T;
 
   /**
    * Converts any ObjectId properties into strings for JSON serialization
