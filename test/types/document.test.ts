@@ -49,21 +49,11 @@ void async function main() {
 }();
 
 
-void async function run() {
-  const user = new Test({ name: {}, address: {} });
-  const error = user.validateSync();
-  if (error != null) {
-    const _error = error.errors.address;
-  }
-}();
-
 (function() {
   const test = new Test();
   test.validate({ pathsToSkip: ['hello'] });
   test.validate({ pathsToSkip: 'name age' });
-  test.validateSync({ pathsToSkip: ['name', 'age'] });
-  test.validateSync({ pathsToSkip: 'name age' });
-  test.validateSync({ pathsToSkip: 'name age', blub: 1 });
+  expect(test).type.not.toHaveProperty('validateSync');
   expect(test.save()).type.toBeAssignableTo<Promise<ITest & { _id: any; }>>();
   expect(test.save({})).type.toBeAssignableTo<Promise<ITest & { _id: any; }>>();
 })();

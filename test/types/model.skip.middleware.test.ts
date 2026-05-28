@@ -101,12 +101,6 @@ async function gh8768() {
   await user.validate({ middleware: { pre: false } });
   await user.validate({ middleware: { post: false } });
 
-  // ValidateOptions - doc.validateSync()
-  user.validateSync({ middleware: false });
-  user.validateSync({ middleware: { pre: false } });
-  user.validateSync({ middleware: { post: false } });
-  user.validateSync({ middleware: false, pathsToSkip: ['name'] });
-
   // MongooseBulkSaveOptions
   await User.bulkSave([user], { middleware: false });
   await User.bulkSave([user], { middleware: { pre: false } });

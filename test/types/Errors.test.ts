@@ -15,10 +15,10 @@ function handleValidationError(err: mongoose.Error.ValidationError): Array<strin
  *
  * @see https://github.com/Automattic/mongoose/issues/11838
  */
-function gh11838() {
+async function gh11838() {
   const Model = mongoose.model('Test', new mongoose.Schema({ answer: Number }));
   const doc = new Model({ answer: 'not a number' });
-  const err = doc.validateSync();
+  const err = await doc.validate().then(() => null, err => err);
 
   err instanceof mongoose.Error;
   err instanceof mongoose.MongooseError;

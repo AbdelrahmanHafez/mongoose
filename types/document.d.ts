@@ -320,9 +320,5 @@ declare module 'mongoose' {
     validate(pathsToValidate?: pathsToValidate, options?: Omit<ValidateOptions, 'pathsToSkip'> & AnyObject): Promise<void>;
     validate(options: ValidateOptions): Promise<void>;
 
-    /** Executes registered validation rules (skipping asynchronous validators) for this document. */
-    validateSync(options: ValidateOptions & { [k: string]: any }): Error.ValidationError | null;
-    validateSync<T extends keyof DocType>(pathsToValidate?: T | T[], options?: Omit<ValidateOptions, 'pathsToSkip'> & AnyObject): Error.ValidationError | null;
-    validateSync(pathsToValidate?: pathsToValidate, options?: Omit<ValidateOptions, 'pathsToSkip'> & AnyObject): Error.ValidationError | null;
   }
 }
