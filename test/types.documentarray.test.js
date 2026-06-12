@@ -1260,6 +1260,65 @@ describe('types.documentarray', function() {
       );
     });
 
+    it('updates top-level populated() after addToSet() appends a subdoc', async function() {
+      // Arrange
+      const { Trip, locations, trip } = await createTestContext();
+      const fromDb = await Trip.findById(trip._id).orFail().populate('stops.location');
+
+      // Act
+      fromDb.stops.addToSet({ location: new mongoose.Types.ObjectId(), sequence: 4 });
+
+      // Assert
+      assert.deepStrictEqual(
+        fromDb.populated('stops.location').map(id => id?.toString()),
+        [
+          locations[0]._id.toString(),
+          locations[1]._id.toString(),
+          locations[2]._id.toString(),
+          undefined
+        ]
+      );
+    });
+
+    it('updates top-level populated() after nonAtomicPush() appends a subdoc', async function() {
+      // Arrange
+      const { Trip, locations, trip } = await createTestContext();
+      const fromDb = await Trip.findById(trip._id).orFail().populate('stops.location');
+
+      // Act
+      fromDb.stops.nonAtomicPush({ location: new mongoose.Types.ObjectId(), sequence: 4 });
+
+      // Assert
+      assert.deepStrictEqual(
+        fromDb.populated('stops.location').map(id => id?.toString()),
+        [
+          locations[0]._id.toString(),
+          locations[1]._id.toString(),
+          locations[2]._id.toString(),
+          undefined
+        ]
+      );
+    });
+
+    it('updates top-level populated() after set() replaces a subdoc', async function() {
+      // Arrange
+      const { Trip, locations, trip } = await createTestContext();
+      const fromDb = await Trip.findById(trip._id).orFail().populate('stops.location');
+
+      // Act
+      fromDb.stops.set(0, { location: new mongoose.Types.ObjectId(), sequence: 4 });
+
+      // Assert
+      assert.deepStrictEqual(
+        fromDb.populated('stops.location').map(id => id?.toString()),
+        [
+          undefined,
+          locations[1]._id.toString(),
+          locations[2]._id.toString()
+        ]
+      );
+    });
+
     async function createTestContext() {
       const locationSchema = new Schema({ name: String });
       const stopSchema = new Schema({
