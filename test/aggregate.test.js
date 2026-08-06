@@ -1194,6 +1194,34 @@ describe('aggregate: ', function() {
     }
   });
 
+  it('closes after pre middleware skips the aggregation', async function() {
+    // Arrange
+    const { BufferedBand, bufferedConnection } = createTestContext({ skipMiddleware: true });
+    const cursor = BufferedBand.aggregate().cursor();
+    let closeEvents = 0;
+    cursor.on('close', () => ++closeEvents);
+    await new Promise(resolve => setImmediate(resolve));
+
+    try {
+      // Act
+      const outcome = await Promise.race([
+        cursor.close().then(
+          () => 'closed',
+          error => `rejected: ${error.message}`
+        ),
+        new Promise(resolve => setImmediate(() => resolve('pending')))
+      ]);
+
+      // Assert
+      assert.deepStrictEqual(
+        { outcome, closeEvents, driverCursor: cursor.cursor },
+        { outcome: 'closed', closeEvents: 1, driverCursor: null }
+      );
+    } finally {
+      await bufferedConnection.destroy();
+    }
+  });
+
   it('cursor() with useMongooseAggCursor (gh-5145)', function() {
     const MyModel = db.model('Test', { name: String });
 
@@ -1422,9 +1450,14 @@ describe('aggregate: ', function() {
     );
   });
 
-  function createTestContext() {
+  function createTestContext({ skipMiddleware = false } = {}) {
     const collectionName = 'aggregate_cursor_lazy_buffering';
     const bandSchema = new Schema({ name: String });
+    if (skipMiddleware) {
+      bandSchema.pre('aggregate', function() {
+        throw mongoose.skipMiddlewareFunction();
+      });
+    }
     const SeedBand = db.model('SeedBand', bandSchema, collectionName);
     const bufferedConnection = mongoose.createConnection();
     const BufferedBand = bufferedConnection.model('BufferedBand', bandSchema, collectionName);
