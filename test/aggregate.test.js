@@ -1135,6 +1135,33 @@ describe('aggregate: ', function() {
     }
   });
 
+  it('defers buffered aggregate cursor creation until the first read', async function() {
+    // Arrange
+    const { SeedBand, BufferedBand, bufferedConnection } = createTestContext();
+    await SeedBand.deleteMany({});
+    await SeedBand.create([{ name: 'Axl' }, { name: 'Slash' }]);
+
+    try {
+      // Act
+      const cursor = BufferedBand.aggregate([
+        { $sort: { name: 1 } },
+        { $project: { _id: 0, name: 1 } }
+      ]).cursor();
+      await bufferedConnection.openUri(start.uri);
+      await new Promise(resolve => setImmediate(resolve));
+      const rawCursorBeforeRead = cursor.cursor;
+      const band = await cursor.next();
+
+      // Assert
+      assert.strictEqual(rawCursorBeforeRead, null);
+      assert.deepStrictEqual(band, { name: 'Axl' });
+      assert.strictEqual(typeof cursor.cursor.next, 'function');
+      await cursor.close();
+    } finally {
+      await bufferedConnection.destroy();
+    }
+  });
+
   it('cursor() with useMongooseAggCursor (gh-5145)', function() {
     const MyModel = db.model('Test', { name: String });
 
@@ -1362,4 +1389,14 @@ describe('aggregate: ', function() {
       err => err.message === 'Unauthorized aggregate operation: only allowed operations are permitted'
     );
   });
+
+  function createTestContext() {
+    const collectionName = 'aggregate_cursor_lazy_buffering';
+    const bandSchema = new Schema({ name: String });
+    const SeedBand = db.model('SeedBand', bandSchema, collectionName);
+    const bufferedConnection = mongoose.createConnection();
+    const BufferedBand = bufferedConnection.model('BufferedBand', bandSchema, collectionName);
+
+    return { SeedBand, BufferedBand, bufferedConnection };
+  }
 });
