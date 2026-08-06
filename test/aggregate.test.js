@@ -1162,6 +1162,38 @@ describe('aggregate: ', function() {
     }
   });
 
+  it('closes an unread buffered aggregate cursor after the connection opens', async function() {
+    // Arrange
+    const { BufferedBand, bufferedConnection } = createTestContext();
+    const cursor = BufferedBand.aggregate().cursor();
+    let closeEvents = 0;
+    cursor.on('close', () => ++closeEvents);
+
+    try {
+      // Act
+      await bufferedConnection.openUri(start.uri);
+      await new Promise(resolve => setImmediate(resolve));
+      const rawCursorBeforeClose = cursor.cursor;
+      await cursor.close();
+
+      // Assert
+      assert.deepStrictEqual(
+        {
+          rawCursorBeforeClose,
+          closeEvents,
+          driverCursorClosed: cursor.cursor.closed
+        },
+        {
+          rawCursorBeforeClose: null,
+          closeEvents: 1,
+          driverCursorClosed: true
+        }
+      );
+    } finally {
+      await bufferedConnection.destroy();
+    }
+  });
+
   it('cursor() with useMongooseAggCursor (gh-5145)', function() {
     const MyModel = db.model('Test', { name: String });
 
