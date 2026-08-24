@@ -33,6 +33,7 @@ If you have a question about Mongoose (not a bug report) please post it to eithe
     * `function(err) {`
 * Write tests and make sure they pass (tests are in the [test](https://github.com/Automattic/mongoose/tree/master/test) directory).
 * Write typings-tests if you modify the typescript-typings. (tests are in the [test/types](https://github.com/Automattic/mongoose/tree/master/test/types) directory).
+* Review the [performance guidelines](PERFORMANCE.md) for runtime changes. Benchmark each performance claim with representative input.
 
 ## Running the tests
 
